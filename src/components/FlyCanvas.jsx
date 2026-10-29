@@ -362,8 +362,8 @@ export default function FlyCanvas({
       BRAIN._currentBehavior = behavior.current;
       BRAIN.drives.groom = behavior.current === 'groom' ? Math.max(0, BRAIN.drives.groom - 0.02 * dtScale) : BRAIN.drives.groom;
 
-      // Throttle React state updates to 10 FPS (every 100ms) to prevent runaway re-render loops and spike cascades
-      if (now - lastStateUpdateTime > 100) {
+      // Smooth React state updates at 25 FPS (~40ms) to ensure butter-smooth telemetry on web hosting
+      if (now - lastStateUpdateTime > 40) {
         lastStateUpdateTime = now;
         setDrives({
           behaviorState: behavior.current,

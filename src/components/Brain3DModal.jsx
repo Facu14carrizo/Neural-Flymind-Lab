@@ -334,6 +334,7 @@ export default function Brain3DModal({ isOpen, onClose }) {
 
     let animId;
     let startTime = performance.now();
+    let lastTelemetryUpdate = 0;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
@@ -378,10 +379,13 @@ export default function Brain3DModal({ isOpen, onClose }) {
 
         regGroup.scale.set(item.animScale, item.animScale, item.animScale);
 
-        const intensity = Math.min(2.0, avg / 20);
-        const pulse = Math.sin(elapsedTime * 4 + reg.name.length) * 0.1;
-        mat.emissiveIntensity = (0.35 + intensity + pulse) * item.animOpacity;
-        mat.opacity = (0.75 + Math.min(0.25, intensity * 0.2)) * item.animOpacity;
+        // Smooth low-pass filter on activity to eliminate erratic high-frequency strobe/flicker
+        const targetIntensity = Math.min(1.4, avg / 22);
+        item.smoothIntensity = (item.smoothIntensity ?? 0) + (targetIntensity - (item.smoothIntensity ?? 0)) * 0.08;
+
+        const pulse = Math.sin(elapsedTime * 1.5 + reg.name.length) * 0.06;
+        mat.emissiveIntensity = (0.28 + item.smoothIntensity + pulse) * item.animOpacity;
+        mat.opacity = (0.7 + Math.min(0.25, item.smoothIntensity * 0.2)) * item.animOpacity;
 
         wireMat.opacity = 0.35 * item.animOpacity;
 
@@ -392,11 +396,16 @@ export default function Brain3DModal({ isOpen, onClose }) {
         }
       });
 
-      setTelemetry({
-        totalActive: Math.round(totalFiring),
-        firingRate: Math.round(maxActivity * 4.2),
-        topRegion: topRegName,
-      });
+      // Throttle React state telemetry updates to 10 FPS
+      const now = performance.now();
+      if (now - lastTelemetryUpdate > 100) {
+        lastTelemetryUpdate = now;
+        setTelemetry({
+          totalActive: Math.round(totalFiring),
+          firingRate: Math.round(maxActivity * 4.2),
+          topRegion: topRegName,
+        });
+      }
 
       renderer.render(scene, camera);
     };

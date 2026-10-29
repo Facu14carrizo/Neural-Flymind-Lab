@@ -543,7 +543,7 @@ body,
 
 .rp-progress-fill {
   height: 100%;
-  transition: width 0.3s ease;
+  transition: width 0.12s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .rp-progress-fill.cyan { background: #00f2fe; }
@@ -600,7 +600,7 @@ body,
 .circuit-fill {
   height: 100%;
   background: linear-gradient(90deg, #38bdf8, #818cf8);
-  transition: width 0.2s ease;
+  transition: width 0.12s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .circuit-val {
