@@ -135,6 +135,7 @@ export default function FlyCanvas({
     let animId;
     let lastTime = performance.now();
     let lastStateUpdateTime = 0;
+    let brainTickAccumulator = 0;
 
     const BODY = {
       headRadius: 6,
@@ -213,8 +214,13 @@ export default function FlyCanvas({
       BRAIN.stimulate.foodNearby = nf !== null && nf.dist < 200;
       BRAIN.stimulate.foodContact = nf !== null && nf.dist < 25;
 
-      if (BRAIN.update) {
-        BRAIN.update();
+      brainTickAccumulator += dt;
+      // Step biological connectome in fixed ~16.6ms intervals (60Hz biological clock)
+      while (brainTickAccumulator >= 0.016) {
+        if (BRAIN.update) {
+          BRAIN.update();
+        }
+        brainTickAccumulator -= 0.016;
       }
 
       const nodeActs = {};

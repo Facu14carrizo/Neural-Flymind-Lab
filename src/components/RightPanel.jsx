@@ -5,25 +5,31 @@ export default function RightPanel({ drives, nodeActivations, lightState, tempSt
   const [firingRate, setFiringRate] = useState(0);
   const flyCanvasRef = useRef(null);
 
-  // Calculate live firing rate and total spikes smoothly
-  const lastSpikeCalcRef = useRef(Date.now());
-
+  // Calculate live firing rate
   useEffect(() => {
     const values = Object.values(nodeActivations);
     const activeNeurons = values.filter((v) => v > 5);
-    const currentRate = activeNeurons.length;
-    setFiringRate(currentRate);
-
-    const now = Date.now();
-    const elapsedSec = Math.min(1, Math.max(0.05, (now - lastSpikeCalcRef.current) / 1000));
-    lastSpikeCalcRef.current = now;
-
-    if (currentRate > 0) {
-      // Biologically plausible: active neurons * Hz * seconds elapsed
-      const spikesProduced = Math.round(currentRate * 12 * elapsedSec);
-      setSpikeCount((prev) => prev + Math.max(1, spikesProduced));
-    }
+    setFiringRate(activeNeurons.length);
   }, [nodeActivations]);
+
+  // Accumulate spikes smoothly on a stable 250ms clock based on actual firing rate
+  const currentRateRef = useRef(firingRate);
+  useEffect(() => {
+    currentRateRef.current = firingRate;
+  }, [firingRate]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const rate = currentRateRef.current;
+      if (rate > 0) {
+        // In 250ms (0.25s), active neurons fire rate * 0.25 * baseline coefficient
+        const newSpikes = Math.round(rate * 14 * 0.25);
+        setSpikeCount((prev) => prev + Math.max(1, newSpikes));
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Render Rotating 3D Bio-Spectrum Fly Hologram
   useEffect(() => {
