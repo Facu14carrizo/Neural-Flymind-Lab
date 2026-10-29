@@ -134,6 +134,7 @@ export default function FlyCanvas({
 
     let animId;
     let lastTime = performance.now();
+    let lastStateUpdateTime = 0;
 
     const BODY = {
       headRadius: 6,
@@ -361,16 +362,20 @@ export default function FlyCanvas({
       BRAIN._currentBehavior = behavior.current;
       BRAIN.drives.groom = behavior.current === 'groom' ? Math.max(0, BRAIN.drives.groom - 0.02 * dtScale) : BRAIN.drives.groom;
 
-      setDrives({
-        behaviorState: behavior.current,
-        hunger: BRAIN.drives.hunger,
-        fear: BRAIN.drives.fear,
-        fatigue: BRAIN.drives.fatigue,
-        curiosity: BRAIN.drives.curiosity,
-        groom: BRAIN.drives.groom,
-      });
-      setNodeActivations(nodeActs);
-      onUpdateCaretakerState({ drives: BRAIN.drives, behaviorState: behavior.current, food: sim.food });
+      // Throttle React state updates to 10 FPS (every 100ms) to prevent runaway re-render loops and spike cascades
+      if (now - lastStateUpdateTime > 100) {
+        lastStateUpdateTime = now;
+        setDrives({
+          behaviorState: behavior.current,
+          hunger: BRAIN.drives.hunger,
+          fear: BRAIN.drives.fear,
+          fatigue: BRAIN.drives.fatigue,
+          curiosity: BRAIN.drives.curiosity,
+          groom: BRAIN.drives.groom,
+        });
+        setNodeActivations(nodeActs);
+        onUpdateCaretakerState({ drives: BRAIN.drives, behaviorState: behavior.current, food: sim.food });
+      }
 
       // Render Lighter Slate Bio-Lab Canvas Background for optimal contrast
       const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);

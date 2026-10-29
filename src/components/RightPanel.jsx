@@ -5,15 +5,23 @@ export default function RightPanel({ drives, nodeActivations, lightState, tempSt
   const [firingRate, setFiringRate] = useState(0);
   const flyCanvasRef = useRef(null);
 
-  // Calculate live firing rate and total spikes
+  // Calculate live firing rate and total spikes smoothly
+  const lastSpikeCalcRef = useRef(Date.now());
+
   useEffect(() => {
     const values = Object.values(nodeActivations);
     const activeNeurons = values.filter((v) => v > 5);
     const currentRate = activeNeurons.length;
     setFiringRate(currentRate);
 
+    const now = Date.now();
+    const elapsedSec = Math.min(1, Math.max(0.05, (now - lastSpikeCalcRef.current) / 1000));
+    lastSpikeCalcRef.current = now;
+
     if (currentRate > 0) {
-      setSpikeCount((prev) => prev + currentRate * 3);
+      // Biologically plausible: active neurons * Hz * seconds elapsed
+      const spikesProduced = Math.round(currentRate * 12 * elapsedSec);
+      setSpikeCount((prev) => prev + Math.max(1, spikesProduced));
     }
   }, [nodeActivations]);
 
